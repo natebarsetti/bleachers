@@ -42,7 +42,7 @@
 				});
 
 				var model = results[1];
-				model.getObjectByName('Mesh').material.color.set('FF0000');
+				model.getObjectByName('Mesh').material.color.set('red');
 				var physmesh = model.getObjectByName('physmesh').children[0];
 				physmesh.material.visible = false;
 				physmesh.userData.altspace = {collider: {enabled: false}};
