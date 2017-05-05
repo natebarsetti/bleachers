@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html style='height: 100%'>
+	<head>
+		<title>Bleachers</title>
+		<script src='https://cdnjs.cloudflare.com/ajax/libs/three.js/84/three.js'></script>
+		<script src='https://rawgit.com/mrdoob/three.js/dev/examples/js/loaders/GLTFLoader.js'></script>
+		<script src="http://sdk.altvr.com/libs/altspace.js/0.28.1/altspace.min.js"></script>
+	</head>
+	<body style='height: 100%; margin: 0'>
+		<script>
+			function LoaderPromise(url){
+				return new Promise(function(resolve, reject){
+					var loader = new THREE.GLTFLoader();
+					loader.setCrossOrigin('anonymous');
+					loader.load(url,
+						function(result){
+							console.log(result);
+							var model = result.scene.children[0];
+							model.matrixAutoUpdate = true;
+							resolve(model);
+						},
+						undefined,
+						function(err){
+							reject(err);
+						}
+					);
+				});
+			}
+
+			var sim = new altspace.utilities.Simulation();
+			sim.camera.fov = 60;
+			sim.camera.updateProjectionMatrix();
+
+			var modelPromise = new LoaderPromise('bleachers.gltf');
+			Promise.all([altspace.getEnclosure(), modelPromise])
+			.then(function(results)
+			{
+				var enc = results[0];
+				enc.requestFullspace();
+				sim.scene.addEventListener('fullspacechange', function(){
+					sim.scene.scale.setScalar(enc.pixelsPerMeter);
+				});
+
+				var model = results[1];
+				var physmesh = model.getObjectByName('physmesh').children[0];
+				physmesh.material.visible = false;
+				physmesh.userData.altspace = {collider: {enabled: false}};
+				altspace.addNativeComponent(physmesh, 'n-mesh-collider');
+				altspace.updateNativeComponent(physmesh, 'n-mesh-collider',
+					{type: 'environment', convex: false, isTrigger: false}
+				);
+
+				sim.scene.add(model);
+			})
+			.catch(function(err){
+				console.error(err);
+			});
+		</script>
+	</body>
+</html>
